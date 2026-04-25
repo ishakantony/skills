@@ -24,8 +24,8 @@ npx skills@latest add ishakantony/skills/write-a-skill
 npx skills@latest add ishakantony/skills/write-spec
 ```
 
-Or install all skills at once:
+Or install all skills at once (via skills cli wizard):
 
 ```bash
-npx skills@latest add ishakantony/skills/discuss ishakantony/skills/write-a-skill ishakantony/skills/write-spec
+npx skills@latest add ishakantony/skills
 ```
