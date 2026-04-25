@@ -8,3 +8,8 @@ Interview me relentlessly about every aspect of this plan until we reach a share
 Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead.
+
+After the discussion is done, EXPLICITLY STOP and ask the user about next step using the `question` tool with options: 
+- "Write a spec using /write-spec skill (Recommended)
+- "Continue with implementation"
+- "Stop here"
