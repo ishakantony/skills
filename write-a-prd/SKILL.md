@@ -1,21 +1,23 @@
 ---
-name: write-spec
-description: Turn the current conversation context into a PRD and write it to a file in the project's docs/specs directory. Use when user wants to create a PRD from the current context. DO NOT EVER USE THIS SKILL UNLESS THE USER EXPLICITLY ASKS YOU TO.
+name: write-a-prd
+description: Generate a PRD from the client brief and write it as a local markdown file in issues/. Use when the user wants to turn a client request into a structured PRD.
 ---
 
-This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
+This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
 
-## Process
+1. Ask the user for a long, detailed description of the problem they want to solve and any potential ideas for solutions.
 
-1. Explore the repo to understand the current state of the codebase, if you haven't already.
+2. Explore the repo to verify their assertions and understand the current state of the codebase.
 
-2. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation.
+3. Interview the user relentlessly about every aspect of this plan until you reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one.
+
+4. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation.
 
 A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
-3. Write the PRD using the template below and save it to `docs/specs/[name of the prd]-spec-[yyyy-mm-dd].md`. Create the `docs/specs` directory if it does not exist.
+5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be written as a local markdown file at `issues/prd.md`. Create the `issues/` directory if it doesn't exist. Do NOT submit a GitHub issue or call any external service.
 
 <prd-template>
 
