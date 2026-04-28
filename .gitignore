@@ -1,0 +1,4 @@
+# Ignore directories for Claude and agents
+.claude/
+.agents/
+skills-lock.json
