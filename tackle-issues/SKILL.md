@@ -11,7 +11,7 @@ Loop through AFK issues in `issues/`, picking and completing one task at a time.
 
 1. Discover the project's feedback loops (test + typecheck/lint).
 2. List `issues/*.md` (skip `issues/done/`), classify HITL vs AFK.
-3. **Build the queue once** — order all AFK issues deterministically and materialize them as a TODO list (one todo per issue). This is the source of truth for the rest of the loop.
+3. **Build the queue once** — order all AFK issues deterministically and materialize them as a TODO list (one todo per issue). Each todo's content MUST be the exact issue filename, including the `.md` extension. This is the source of truth for the rest of the loop.
 4. If the queue is empty → output `<promise>NO MORE TASKS</promise>` and stop.
 5. Pop the next pending todo, spawn a subagent to complete it.
 6. After the subagent returns, update that todo (done / partial / blocked) and loop to step 4.
@@ -41,7 +41,14 @@ Record the discovered commands — pass them into every subagent.
 
 ## 3. Build the queue (once)
 
-Sort all AFK issues into a single deterministic order, then write them to a TODO list using `TaskCreate` — one todo per issue, content `Tackle <filename>: <one-line title>`.
+Sort all AFK issues into a single deterministic order, then write them to a TODO list using `TaskCreate` — one todo per issue. The todo content MUST be exactly the issue file name, including the `.md` extension, with no prefix, suffix, title, status marker, or extra words.
+
+Examples:
+
+- Issue file `001-add-login.md` → todo content `001-add-login.md`
+- Issue file `fix-flaky-tests.md` → todo content `fix-flaky-tests.md`
+
+Do not use todo names like `Tackle 001-add-login.md`, `001-add-login.md: Add login`, or `Add login`. The filename is the stable identifier used to match subagent results back to the queue.
 
 **Sort order** (apply each tier; within a tier, fall through to the next tie-breaker):
 
