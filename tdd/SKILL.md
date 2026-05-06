@@ -13,7 +13,7 @@ description: Test-driven development with red-green-refactor loop. Use when user
 
 **Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+See [tests.md](tests.md) for examples, [mocking.md](mocking.md) for mocking guidelines, and [gate.md](gate.md) for the pre-commit gate that prevents decorative tests from landing.
 
 ## Anti-Pattern: Horizontal Slices
 
@@ -96,6 +96,18 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 
 **Never refactor while RED.** Get to GREEN first.
 
+### 5. Gate
+
+Before committing, run the pre-commit gate from [gate.md](gate.md). The gate is a hard block:
+
+- Every test for a behavior listed in the issue's `Behaviors Under Test` section must have a non-tautological "would fail if" justification.
+- No internal mocks for those tests — mocks only at the process boundary (or at additional boundaries declared in `CLAUDE.md`'s `## Test boundaries` section).
+- If the issue is `Test rigor: mutation`, run the manual mutation pass.
+
+If a test cannot pass the gate, either fix it or record a `gate-waived: <test> — <reason>` line in the commit message.
+
+The gate runs once, after refactor, immediately before `git commit`. Don't run it earlier — refactoring will rewrite the tests anyway.
+
 ## Checklist Per Cycle
 
 ```
@@ -104,4 +116,13 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 [ ] Test would survive internal refactor
 [ ] Code is minimal for this test
 [ ] No speculative features added
+```
+
+## Pre-Commit Checklist
+
+```
+[ ] Every listed behavior has a test with a non-tautological "would fail if"
+[ ] No mocks of in-process collaborators (boundary mocks only)
+[ ] If Test rigor: mutation — manual mutation pass run, every test caught its mutation
+[ ] Any unavoidable rule violation recorded as `gate-waived: ...` in the commit message
 ```

@@ -13,7 +13,7 @@ Loop through AFK issues in `issues/`, picking and completing one task at a time.
 2. List `issues/*.md` (skip `issues/done/`), classify HITL vs AFK.
 3. **Build the queue once** — order all AFK issues deterministically and materialize them as a TODO list (one todo per issue). Each todo's content MUST be the exact issue filename, including the `.md` extension. This is the source of truth for the rest of the loop.
 4. If the queue is empty → output `<promise>NO MORE TASKS</promise>` and stop.
-5. Pop the next pending todo, spawn a subagent to complete it.
+5. Pop the next pending todo. Before spawning, run the issue-format check (see step 5 below). Spawn a subagent to complete it.
 6. After the subagent returns, update that todo (done / partial / blocked) and loop to step 4.
 
 Do **not** re-classify or re-prioritize the full backlog on every iteration — that is what causes the infinite-thinking-loop bug when several issues are equally workable. Build the queue once; only revisit it when a subagent reports a new issue file appeared.
@@ -71,22 +71,32 @@ Once the TODO list is written, treat it as immutable order. Do not re-sort. The 
 
 Run `git log --oneline -20` yourself to summarize what's already been shipped. Pass this summary to the subagent so it doesn't repeat completed work.
 
-## 5. Spawn a subagent
+## 5. Issue-format check + spawn a subagent
+
+Before spawning, check the issue's format. New-format issues have a `Behaviors Under Test` section (and a `Test rigor:` field). Old-format issues do not.
+
+**Format decision tree:**
+
+- **New format** (has `Behaviors Under Test`) → spawn the subagent. Pass the `Test rigor:` value (default to `standard` if missing).
+- **Old format with a parent PRD that has `Behaviors Under Test`** → auto-upgrade in place: read the parent PRD, copy the relevant rows for this slice's user stories into a new `Behaviors Under Test` section in the issue file, add `Test rigor: standard` if absent, commit the upgrade as `chore(issues): upgrade <file> to new test format`, then spawn the subagent normally. Do this without asking — the source of truth is the PRD and the upgrade is mechanical.
+- **Old format with no parent PRD** (orphan) → spawn the subagent in **legacy mode**: pass `Test rigor: legacy` and tell the subagent the gate from `tdd/gate.md` will not run (because there's no behavior list to gate against). Surface the legacy fallback in the report so the user knows this slice ran at lower rigor. Do not auto-upgrade orphans — without a PRD, the subagent would invent the behavior list, defeating the purpose.
 
 Use the `Agent` tool (`subagent_type: general-purpose`) so the main context stays clean. The prompt MUST be self-contained and include:
 
-- The full content of the issue file
+- The full content of the issue file (post-upgrade if applicable)
 - The issue's filename (so the subagent can move it on completion)
+- The `Test rigor:` value (`standard` | `mutation` | `legacy`)
 - The discovered feedback-loop commands (test + typecheck/lint)
 - The recent commits summary
 - These instructions:
   - Explore the repo first
   - Implement using the `tdd` skill (red → green → refactor, vertical slices)
   - Before committing, run the feedback loops; fix failures
-  - Commit with a message that includes: **key decisions made**, **files changed**, **blockers/notes for next iteration**
+  - **Run the gate from `tdd/gate.md` before commit, unless `Test rigor: legacy`.** The gate is a hard block: every test for a behavior listed in `Behaviors Under Test` must pass justification + no-internal-mocks; mutation check additionally for `mutation` rigor. Unavoidable rule violations must be recorded as `gate-waived: <test> — <reason>` in the commit message.
+  - Commit with a message that includes: **key decisions made**, **files changed**, **blockers/notes for next iteration**, and any `gate-waived:` lines
   - On success: `git mv issues/<file>.md issues/done/<file>.md`
   - On partial completion: append a `## Progress note (YYYY-MM-DD)` section to the issue file describing what was done and what's left, then commit
-  - Report back: which issue, status (done / partial), commit SHA, any blockers
+  - Report back: which issue, status (done / partial), commit SHA, `Test rigor` actually used, any waivers, any blockers
 
 See [SUBAGENT_PROMPT.md](SUBAGENT_PROMPT.md) for a copy-pasteable prompt template.
 
@@ -111,3 +121,5 @@ Loop to step 4. When all todos are done/blocked, output `<promise>NO MORE TASKS<
 - **Never skip hooks** (`--no-verify`, etc.).
 - If the discovered feedback loops fail and the subagent can't fix them, treat it as a blocker — do not commit broken code to keep the loop moving.
 - **Never re-sort the TODO list mid-loop.** Order is decided once at step 3. If you find yourself comparing two same-tier issues to decide which to do "next," stop — the filename tie-breaker already decided. This rule exists to prevent the infinite-thinking-loop failure mode where the model spins re-weighing equally-workable issues every iteration.
+- **Never bypass the gate.** `Test rigor: legacy` is reserved for orphan old-format issues; never set it to skip the gate on a new-format issue.
+- **Surface waivers.** Every `gate-waived:` line in a subagent's commit message must appear in the loop's running report so the user can review them.
