@@ -11,5 +11,6 @@ If a question can be answered by exploring the codebase, explore the codebase in
 
 After the discussion is done, EXPLICITLY STOP and ask the user about next step using the `question` tool with options: 
 - "Write a prd using /write-a-prd skill (Recommended)
+- "Write a single issue using /write-an-issue skill"
 - "Continue with implementation"
 - "Stop here"
