@@ -21,20 +21,13 @@ Test rigor: {{test_rigor}}  ← one of `standard`, `mutation`, `legacy`
 {{output of `git log --oneline -20`}}
 ```
 
-## Project feedback loops (run these before committing)
-
-- Tests: `{{test_command}}`
-- Typecheck/lint: `{{typecheck_command}}` (omit if the project has no equivalent)
-
-If either fails, fix the failure before committing. If you can't fix it, stop and report it as a blocker.
-
 ## How to implement
 
-1. Explore the repo enough to understand the area you're changing.
+1. Explore the repo enough to understand the area you're changing. Discover the project's test and typecheck/lint commands by inspecting common manifests (`package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc.) — you'll need to run them before committing.
 2. Use the `tdd` skill: red → green → refactor in vertical slices. One test → one implementation → repeat. No horizontal slicing (do not write all tests first).
 3. Build a tracer bullet first if this is a new feature — a thin slice through every layer.
 4. The issue's `Behaviors Under Test` section is the source of truth for what to test. Every behavior listed there must be covered by a test. Do not invent additional tests outside that list — if the spec is wrong, fix the spec, don't paper over it with extra tests.
-5. Run the feedback loops above. Fix anything they catch.
+5. Before committing, run the project's tests + typecheck/lint. Fix anything they catch. If you can't fix a failure, stop and report it as a blocker.
 
 ## Pre-commit gate (REQUIRED unless Test rigor: legacy)
 
