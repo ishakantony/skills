@@ -39,6 +39,7 @@
 
   const QUEUE_KEY = `web-inspect:queue:${HELPER_ORIGIN}`;
   const HIDDEN_KEY = `web-inspect:hidden:${HELPER_ORIGIN}`;
+  const POSITION_KEY = `web-inspect:toolbar-pos:${HELPER_ORIGIN}`;
   const SCREENSHOT_CDN = 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.5.0/dist/index.umd.js';
   const MAX_CONSOLE_BUFFER = 50;
   const MAX_NETWORK_BUFFER = 50;
@@ -600,6 +601,13 @@
     .fe-toolbar .queue-icon { font-size: 14px; line-height: 1; }
     .fe-toolbar .send-btn[hidden] { display: none; }
     .fe-toolbar.hidden { display: none; }
+    .fe-toolbar .drag-handle {
+      cursor: grab; user-select: none; touch-action: none;
+      color: #888; padding: 4px 2px 4px 4px; font-size: 12px;
+      line-height: 1; letter-spacing: -1px;
+    }
+    .fe-toolbar.dragging { transition: none; }
+    .fe-toolbar.dragging .drag-handle { cursor: grabbing; }
 
     .fe-show-tab {
       position: fixed; bottom: 16px; right: 16px; pointer-events: auto;
@@ -748,6 +756,7 @@
       </footer>
     </div>
     <div class="fe-toolbar">
+      <span class="drag-handle" data-role="drag" title="Drag to move" aria-hidden="true">⋮⋮</span>
       <button data-action="toggle-sidebar" class="queue-btn" title="Show queue">
         <span class="queue-icon">☰</span>
         <span class="badge" data-role="badge">0</span>
@@ -1104,6 +1113,7 @@
       els.sessionDescInput.value = '';
       saveQueue();
       renderList();
+      closeSidebar();
     } catch (err) {
       showToast(`Send failed: ${err.message}`, 4000);
     } finally {
@@ -1139,6 +1149,71 @@
   window.addEventListener('resize', reposPins);
 
   // ------------------------------------------------------------------------
+  // Toolbar drag
+  // ------------------------------------------------------------------------
+
+  function applyToolbarPosition(left, top) {
+    const tb = els.toolbar;
+    const w = tb.offsetWidth || 240;
+    const h = tb.offsetHeight || 40;
+    const maxLeft = Math.max(4, window.innerWidth - w - 4);
+    const maxTop = Math.max(4, window.innerHeight - h - 4);
+    left = Math.min(maxLeft, Math.max(4, left));
+    top = Math.min(maxTop, Math.max(4, top));
+    tb.style.left = `${left}px`;
+    tb.style.top = `${top}px`;
+    tb.style.right = 'auto';
+    tb.style.bottom = 'auto';
+  }
+
+  function loadToolbarPosition() {
+    try {
+      const raw = localStorage.getItem(POSITION_KEY);
+      if (!raw) return;
+      const pos = JSON.parse(raw);
+      if (!pos || typeof pos.left !== 'number' || typeof pos.top !== 'number') return;
+      applyToolbarPosition(pos.left, pos.top);
+    } catch { /* ignore */ }
+  }
+
+  (function setupToolbarDrag() {
+    const handle = $('[data-role="drag"]');
+    if (!handle) return;
+    let dragging = false;
+    let offsetX = 0, offsetY = 0;
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      const rect = els.toolbar.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      els.toolbar.classList.add('dragging');
+      try { handle.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      applyToolbarPosition(e.clientX - offsetX, e.clientY - offsetY);
+    });
+    const end = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      els.toolbar.classList.remove('dragging');
+      try { handle.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      const rect = els.toolbar.getBoundingClientRect();
+      try { localStorage.setItem(POSITION_KEY, JSON.stringify({ left: rect.left, top: rect.top })); } catch { /* ignore */ }
+    };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  })();
+
+  window.addEventListener('resize', () => {
+    if (!els.toolbar.style.left) return;
+    const rect = els.toolbar.getBoundingClientRect();
+    applyToolbarPosition(rect.left, rect.top);
+  });
+
+  // ------------------------------------------------------------------------
   // Init
   // ------------------------------------------------------------------------
 
@@ -1148,5 +1223,6 @@
     els.toolbar.classList.add('hidden');
     els.showTab.style.display = 'block';
   }
+  loadToolbarPosition();
   renderList();
 })();
