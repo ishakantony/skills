@@ -589,6 +589,7 @@
     .fe-toolbar button:hover { background: #2a2a2a; }
     .fe-toolbar button.primary { background: #6470F0; }
     .fe-toolbar button.primary:hover { background: #5560E0; }
+    .fe-toolbar button.danger:hover { background: #5a1f1f; color: #ffb4b4; }
     .fe-toolbar button[disabled] { opacity: 0.6; cursor: not-allowed; }
     .fe-toolbar .badge {
       display: inline-flex; align-items: center; justify-content: center;
@@ -755,6 +756,7 @@
       <button data-action="send" class="send-btn primary" data-role="toolbar-send" hidden>
         Send (<span data-role="toolbar-send-count">0</span>)
       </button>
+      <button data-action="stop" class="danger" title="End session and stop the agent">Stop</button>
       <button data-action="hide" title="Hide overlay">×</button>
     </div>
     <div class="fe-show-tab" style="display:none" data-action="show">web-inspect</div>
@@ -1053,7 +1055,32 @@
       els.showTab.style.display = 'none';
       try { localStorage.removeItem(HIDDEN_KEY); } catch { /* ignore */ }
     }
+    else if (act === 'stop') await endSession();
   });
+
+  let sessionEnded = false;
+  async function endSession() {
+    if (sessionEnded) return;
+    if (queue.length > 0) {
+      const ok = confirm(`End session? ${queue.length} unsent annotation(s) will be discarded.`);
+      if (!ok) return;
+    }
+    try {
+      const res = await fetch(`${HELPER_ORIGIN}/end-session?token=${encodeURIComponent(TOKEN)}`, { method: 'POST' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      sessionEnded = true;
+      queue = [];
+      sessionDescription = '';
+      els.sessionDescInput.value = '';
+      saveQueue();
+      renderList();
+      closeSidebar();
+      els.toolbar.innerHTML = '<span style="padding:6px 10px;color:#aaa;">Session ended</span>';
+      showToast('Session ended — agent will clean up.', 3000);
+    } catch (err) {
+      showToast(`Stop failed: ${err.message}`, 4000);
+    }
+  }
 
   async function sendBatch() {
     if (!queue.length) return;

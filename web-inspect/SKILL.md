@@ -22,7 +22,7 @@ Live point-and-comment QA for frontend apps. The user runs their dev server, ope
 3. **Poll** — Agent runs `node {{scripts_path}}/poll.mjs` in a loop. The helper server holds the request open until the browser sends a batch (or 10 min timeout).
 4. **Fix** — Each batch contains N annotations. Agent triages, then fixes one at a time in the main thread, proposing each change before applying (auto mode applies directly).
 5. **Repeat** — After fixing, agent polls again. The user keeps testing and sends more batches.
-6. **Exit** — User says stop, or the helper server is killed. Skill runs `node {{scripts_path}}/start.mjs stop` to restore the HTML files.
+6. **Exit** — User says stop in chat, OR clicks **Stop** in the overlay (which makes the next `poll.mjs` return `{ type: "exit", source: "overlay" }`). Either way, skill runs `node {{scripts_path}}/start.mjs stop` to shut the helper and restore HTML files.
 
 The helper runs on a random localhost port with token auth. The PID file lives inside the skill directory at `.runtime/state.json`, so nothing is written to the project root.
 
@@ -208,7 +208,7 @@ For non-Vite, non-Node frameworks (Laravel, Rails, plain HTML on a remote dev se
 
 ## Cleanup
 
-When the user says "stop", "exit", or you receive an `exit` event:
+When the user says "stop", "exit", or you receive an `exit` event (from the overlay's Stop button or otherwise):
 
 ```bash
 node {{scripts_path}}/start.mjs stop

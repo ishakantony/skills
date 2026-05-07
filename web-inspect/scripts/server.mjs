@@ -239,6 +239,16 @@ async function handle(req, res) {
     return;
   }
 
+  // Browser -> server: user clicked "Stop" in the overlay.
+  // Enqueue an exit event for the agent's poll loop, but DO NOT kill the
+  // server here — the agent's cleanup (start.mjs stop) hits /exit next and
+  // shuts the process down. Killing immediately would race the poll consumer
+  // and lose the event when no poller is currently waiting.
+  if (req.method === 'POST' && url.pathname === '/end-session') {
+    deliverEvent({ type: 'exit', source: 'overlay' });
+    return send(res, 200, { ok: true });
+  }
+
   send(res, 404, { ok: false, error: 'not_found' });
 }
 

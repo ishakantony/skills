@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>web-inspect demo</title>
+<style>
+  body { font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; margin: 0; color: #1a1a1a; background: #fafafa; }
+  header { padding: 24px 32px; background: #111; color: #fff; }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  header p { margin: 4px 0 0; color: #aaa; font-size: 13px; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px; display: grid; gap: 20px; }
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); padding: 20px 24px; }
+  .card h2 { margin: 0 0 12px; font-size: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { all: unset; cursor: pointer; padding: 8px 14px; border-radius: 6px; background: #6470F0; color: #fff; font: inherit; font-weight: 500; }
+  button:hover { background: #5560E0; }
+  button.ghost { background: #eee; color: #333; }
+  button.ghost:hover { background: #ddd; }
+  ul.todo { margin: 0; padding-left: 20px; }
+  ul.todo li { padding: 4px 0; }
+  .save-btn { background: #18a058; }
+  .save-btn:hover { background: #14894b; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f0f0f5; color: #555; font-size: 12px; }
+  footer { padding: 24px 32px; color: #888; font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>web-inspect demo page</h1>
+    <p>Pin elements with the overlay (bottom-right). Send to log annotations to the harness terminal.</p>
+  </header>
+
+  <main>
+    <section class="card" id="profile-card">
+      <h2>Profile <span class="badge">demo</span></h2>
+      <p>Mira Tobias — <em>frontend</em>. Joined 2024.</p>
+      <div class="row">
+        <button class="save-btn" id="save-btn">Save</button>
+        <button class="ghost">Cancel</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Todo list</h2>
+      <ul class="todo">
+        <li>Wire up the picker</li>
+        <li>Capture screenshots</li>
+        <li>Resolve console-error stack frames</li>
+        <li>Ship the Stop button</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Capture-path triggers</h2>
+      <p>Click these to populate the overlay's console / network buffers, then pin nearby and Send.</p>
+      <div class="row">
+        <button id="error-btn">Throw a console.error</button>
+        <button id="reject-btn">Trigger unhandled rejection</button>
+        <button id="fetch-btn">Fetch a 404</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>scripts/test.html — served by scripts/test.mjs with the overlay injected at request time.</footer>
+
+  <script>
+    document.getElementById('error-btn').addEventListener('click', () => {
+      console.error('demo error: save button click handler crashed', new Error('synthetic'));
+    });
+    document.getElementById('reject-btn').addEventListener('click', () => {
+      Promise.reject(new Error('synthetic unhandled rejection'));
+    });
+    document.getElementById('fetch-btn').addEventListener('click', async () => {
+      try { await fetch('/missing-endpoint'); } catch { /* network errors recorded by overlay */ }
+    });
+    document.getElementById('save-btn').addEventListener('click', () => {
+      console.log('save clicked');
+    });
+  </script>
+</body>
+</html>
