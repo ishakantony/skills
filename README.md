@@ -30,6 +30,7 @@ npx skills@latest add ishakantony/skills/commit
 npx skills@latest add ishakantony/skills/discuss
 npx skills@latest add ishakantony/skills/execute-plan-using-subagent
 npx skills@latest add ishakantony/skills/improve-codebase-architecture
+npx skills@latest add ishakantony/skills/learn-lessons
 npx skills@latest add ishakantony/skills/merge-changes-from-worktree
 npx skills@latest add ishakantony/skills/prd-to-issues
 npx skills@latest add ishakantony/skills/qa-fe-web
